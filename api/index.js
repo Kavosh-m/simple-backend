@@ -1,13 +1,13 @@
 const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
+const serverless = require("serverless-http"); // Add this for Vercel compatibility
 require("dotenv").config();
 
 const app = express();
-const port = 3000;
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL; // Replace with your Supabase Project URL
-const supabaseKey = process.env.SUPABASE_KEY; // Replace with your Supabase Anon Key
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware to parse JSON requests
@@ -30,7 +30,7 @@ app.post("/users", async (req, res) => {
 
 // Read: Get all users
 app.get("/users", async (req, res) => {
-  const { data, error } = await supabase.from("users").select();
+  const { data, error } = await supabase.from("users").select("*");
 
   if (error)
     return res.status(500).json({ message: "Error fetching users", error });
@@ -77,7 +77,5 @@ app.delete("/users/:id", async (req, res) => {
   res.json(data[0]);
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+// Export the app as a serverless function for Vercel
+module.exports = serverless(app);
