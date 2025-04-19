@@ -77,5 +77,14 @@ app.delete("/users/:id", async (req, res) => {
   res.json(data[0]);
 });
 
+const port = process.env.PORT || 3000;
+
+// Run the server locally if not in a Vercel environment
+if (process.env.NODE_ENV !== "production") {
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
+
 // Export the app as a serverless function for Vercel
 module.exports = serverless(app);
