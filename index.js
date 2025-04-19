@@ -1,84 +1,80 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
+require("dotenv").config();
 
 const app = express();
 const port = 3000;
 
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL; // Replace with your Supabase Project URL
+const supabaseKey = process.env.SUPABASE_KEY; // Replace with your Supabase Anon Key
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 // Middleware to parse JSON requests
 app.use(express.json());
-
-// Path to the JSON file
-const dbPath = path.join(__dirname, "users.json");
-
-// Helper function to read the JSON file
-const readUsers = () => {
-  const data = fs.readFileSync(dbPath);
-  return JSON.parse(data);
-};
-
-// Helper function to write to the JSON file
-const writeUsers = (users) => {
-  fs.writeFileSync(dbPath, JSON.stringify(users, null, 2));
-};
 
 // CRUD Operations
 
 // Create: Add a new user
-app.post("/users", (req, res) => {
-  const users = readUsers();
-  const newUser = {
-    id: users.length ? users[users.length - 1].id + 1 : 1, // Auto-increment ID
-    name: req.body.name,
-    age: req.body.age,
-    sex: req.body.sex,
-  };
-  users.push(newUser);
-  writeUsers(users);
-  res.status(201).json(newUser);
+app.post("/users", async (req, res) => {
+  const { name, age, sex } = req.body;
+  const { data, error } = await supabase
+    .from("users")
+    .insert([{ name, age, sex }])
+    .select();
+
+  if (error)
+    return res.status(500).json({ message: "Error creating user", error });
+  res.status(201).json(data[0]);
 });
 
 // Read: Get all users
-app.get("/users", (req, res) => {
-  const users = readUsers();
-  res.json(users);
+app.get("/users", async (req, res) => {
+  const { data, error } = await supabase.from("users").select();
+
+  if (error)
+    return res.status(500).json({ message: "Error fetching users", error });
+  res.json(data);
 });
 
 // Read: Get a single user by ID
-app.get("/users/:id", (req, res) => {
-  const users = readUsers();
-  const user = users.find((u) => u.id === parseInt(req.params.id));
-  if (!user) return res.status(404).json({ message: "User not found" });
-  res.json(user);
+app.get("/users/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", req.params.id)
+    .single();
+
+  if (error || !data)
+    return res.status(404).json({ message: "User not found", error });
+  res.json(data);
 });
 
 // Update: Update a user by ID
-app.put("/users/:id", (req, res) => {
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.id === parseInt(req.params.id));
-  if (userIndex === -1)
-    return res.status(404).json({ message: "User not found" });
+app.put("/users/:id", async (req, res) => {
+  const { name, age, sex } = req.body;
+  const { data, error } = await supabase
+    .from("users")
+    .update({ name, age, sex })
+    .eq("id", req.params.id)
+    .select();
 
-  users[userIndex] = {
-    ...users[userIndex],
-    name: req.body.name || users[userIndex].name,
-    age: req.body.age || users[userIndex].age,
-    sex: req.body.sex || users[userIndex].sex,
-  };
-  writeUsers(users);
-  res.json(users[userIndex]);
+  if (error || !data.length)
+    return res.status(404).json({ message: "User not found", error });
+  res.json(data[0]);
 });
 
 // Delete: Delete a user by ID
-app.delete("/users/:id", (req, res) => {
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.id === parseInt(req.params.id));
-  if (userIndex === -1)
-    return res.status(404).json({ message: "User not found" });
+app.delete("/users/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", req.params.id)
+    .select();
 
-  const deletedUser = users.splice(userIndex, 1);
-  writeUsers(users);
-  res.json(deletedUser);
+  if (error || !data.length)
+    return res.status(404).json({ message: "User not found", error });
+  res.json(data[0]);
 });
 
 // Start the server
