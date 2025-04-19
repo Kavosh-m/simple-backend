@@ -25,7 +25,7 @@ app.post("/users", async (req, res) => {
 
   if (error)
     return res.status(500).json({ message: "Error creating user", error });
-  res.status(201).json(data[0]);
+  return res.status(201).json(data[0]);
 });
 
 // Read: Get all users
@@ -34,7 +34,7 @@ app.get("/users", async (req, res) => {
 
   if (error)
     return res.status(500).json({ message: "Error fetching users", error });
-  res.json(data);
+  return res.json(data);
 });
 
 // Read: Get a single user by ID
@@ -47,7 +47,7 @@ app.get("/users/:id", async (req, res) => {
 
   if (error || !data)
     return res.status(404).json({ message: "User not found", error });
-  res.json(data);
+  return res.json(data);
 });
 
 // Update: Update a user by ID
@@ -61,7 +61,7 @@ app.put("/users/:id", async (req, res) => {
 
   if (error || !data.length)
     return res.status(404).json({ message: "User not found", error });
-  res.json(data[0]);
+  return res.json(data[0]);
 });
 
 // Delete: Delete a user by ID
@@ -74,7 +74,7 @@ app.delete("/users/:id", async (req, res) => {
 
   if (error || !data.length)
     return res.status(404).json({ message: "User not found", error });
-  res.json(data[0]);
+  return res.json(data[0]);
 });
 
 const port = process.env.PORT || 3000;
